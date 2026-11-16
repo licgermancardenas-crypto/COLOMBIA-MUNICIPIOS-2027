@@ -129,3 +129,6 @@ REGIONES = {'Caribe': ['08', '13', '20', '23', '44', '47', '70'], 'Insular': ['8
             'Andina': ['05', '11', '15', '17', '25', '41', '54', '63', '66', '68', '73'], 'Orinoquía': ['50', '81', '85', '99'],
             'Amazonía': ['18', '86', '91', '94', '95', '97']}
 REGION_OF = {d: r for r, ds in REGIONES.items() for d in ds}
+
+# Mapa interactivo publicado (GitHub Pages). Para usar la copia local: MAP_URL = 'MAPA_INTERACTIVO'
+MAP_URL = 'https://licgermancardenas-crypto.github.io/COLOMBIA-MUNICIPIOS-2027/entregables/MAPA_INTERACTIVO'

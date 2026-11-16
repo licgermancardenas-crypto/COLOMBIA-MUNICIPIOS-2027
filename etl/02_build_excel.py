@@ -589,7 +589,7 @@ links = ['=HYPERLINK("#\'MUNICIPIOS\'!C"&(MATCH($C$4,tMUNICIPIOS[municipio_clave
          '=HYPERLINK("#\'TERRITORIO\'!C"&(MATCH($C$5,tTERRITORIO[codigo_divipola],0)+4),"► Ver su fila en TERRITORIO")',
          '=HYPERLINK("https://news.google.com/search?q=%22"&SUBSTITUTE(INDEX(tMUNICIPIOS[nombre_municipio],MATCH($C$5,tMUNICIPIOS[codigo_divipola],0))," ","+")&"%22+alcald%C3%ADa+2027&hl=es-419&gl=CO","► Buscar noticias en Google News")',
          '=HYPERLINK("https://www.google.com/maps/search/"&SUBSTITUTE($C$4," ","+")&"+Colombia","► Ver en Google Maps")',
-         '=HYPERLINK("MAPA_INTERACTIVO/ir/"&$C$5&".html","► Abrir en el MAPA INTERACTIVO (sectores censales)")']
+         f'=HYPERLINK("{MAP_URL}/ir/"&$C$5&".html","► Abrir en el MAPA INTERACTIVO en línea (sectores censales y puestos)")']
 for k, f_ in enumerate(links):
     c = ws.cell(r_ + k, 3, f_); c.font = Font(name=FONT, color='0563C1', underline='single', size=9)
 r_ += len(links) + 1
@@ -672,9 +672,9 @@ for name, sp in SPEC.items():
         ws.cell(i, LC + 1, lb).font = Font(name=FONT, size=9)
     ws.column_dimensions[L(LC)].width = 3; ws.column_dimensions[L(LC + 1)].width = 34
     nr = 5 + len(sp['legend']) + 1
-    tip = ('Pasá el mouse sobre un departamento para ver gobernador y organización; clic: va a su fila en DEPARTAMENTOS.' if name == 'MAPA GOBERNACIONES' else
+    tip = ('Pasá el mouse sobre un departamento para ver gobernador y organización; clic: abre el MAPA INTERACTIVO en línea en ese departamento.' if name == 'MAPA GOBERNACIONES' else
            'Pasá el mouse sobre un municipio para ver alcalde, fuerza, margen 2019, swing, bastión, población e IPM. '
-           'El recuadro de la derecha amplía la zona andina; arriba a la izquierda, San Andrés y Providencia. Clic en un municipio: abre el MAPA INTERACTIVO web (carpeta MAPA_INTERACTIVO) con su ficha y sus sectores censales.')
+           'El recuadro de la derecha amplía la zona andina; arriba a la izquierda, San Andrés y Providencia. Clic en un municipio: abre el MAPA INTERACTIVO en línea (navegador) con su ficha, sus sectores censales y sus puestos de votación.')
     c = ws.cell(nr, LC, tip); c.font = Font(name=FONT, size=8, italic=True, color='595959'); c.alignment = Alignment(wrap_text=True, vertical='top')
     ws.merge_cells(start_row=nr, start_column=LC, end_row=nr + 4, end_column=LC + 1)
     if name == 'MAPA GOBERNACIONES':

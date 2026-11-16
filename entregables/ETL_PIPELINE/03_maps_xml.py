@@ -119,7 +119,7 @@ def municipal(name):
     for frame, rows in ((t_main, gm), (t_and, ga), (t_isl, gs)):
         lw = 0.25 if frame is t_main else 0.5
         for r in rows.itertuples():
-            d.poly(r.r, frame, sp['color'](r), f"MAPA_INTERACTIVO/ir/{r.codigo_divipola}.html", tip_mun(r)[:205] + ' · Clic: abre el mapa web con sus sectores censales', f'{r.codigo_divipola}', lw=lw)
+            d.poly(r.r, frame, sp['color'](r), f"{MAP_URL}/ir/{r.codigo_divipola}.html", tip_mun(r)[:205] + ' · Clic: abre el mapa en línea', f'{r.codigo_divipola}', lw=lw)
     sc = MW / (MAIN[2] - MAIN[0])
     d.rect(10 + (ANDES[0] - MAIN[0]) * sc, TOP + (MAIN[3] - ANDES[3]) * sc, (ANDES[2] - ANDES[0]) * sc, (ANDES[3] - ANDES[1]) * sc, line='7F7F7F')
     d.rect(AX, TOP, AW, h_and, line='A6A6A6')
@@ -136,7 +136,7 @@ def gobernaciones():
         tip = (f'{r.nombre_departamento} · Gobernador: {r.nombre_completo if isinstance(r.nombre_completo, str) else "— (Bogotá D.C.: alcalde mayor)"}'
                f' · {r.partido_o_coalicion if isinstance(r.partido_o_coalicion, str) else ""}')[:240]
         if pd.notna(r.porcentaje_votos): tip += f' · {r.porcentaje_votos:.1%}'
-        d.poly(r.r, t_main, COL.get(fz, '#D5D8DC') if fz else SIN, f"MAPA_INTERACTIVO/ir/d{r.departamento_id}.html", tip[:200] + ' · Clic: abre el mapa web del departamento', r.departamento_id, lw=0.75)
+        d.poly(r.r, t_main, COL.get(fz, '#D5D8DC') if fz else SIN, f"{MAP_URL}/ir/d{r.departamento_id}.html", tip[:200] + ' · Clic: abre el mapa en línea', r.departamento_id, lw=0.75)
     for r in dg.itertuples():
         x, y = t_main(*r.geometry.representative_point().coords[0])
         d.rect(x - 40, y - 6, 80, 12, line=None, text=r.nombre_departamento.title()[:18], size=7, bold=True)
