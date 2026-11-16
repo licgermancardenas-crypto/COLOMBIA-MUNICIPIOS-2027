@@ -1,5 +1,8 @@
 # ATLAS COLOMBIA 2027 · Base maestra de inteligencia electoral
 
+**Mapa interactivo en línea:** https://licgermancardenas-crypto.github.io/COLOMBIA-MUNICIPIOS-2027/
+(acceso directo a un municipio: `.../entregables/MAPA_INTERACTIVO/ir/<código DIVIPOLA>.html`, por ejemplo `ir/05001.html`)
+
 Elecciones territoriales del **31 de octubre de 2027** (período 2028-2031), según la Resolución 12338 de 2026 de la Registraduría.
 Fecha de corte de los datos: **15-11-2026**.
 
