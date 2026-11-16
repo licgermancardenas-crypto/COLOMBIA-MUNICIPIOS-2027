@@ -1,0 +1,11 @@
+# Fuentes descargadas (se regeneran con etl/00_download.sh, 05_download_sectores.py y 06_download_puestos.py)
+raw/
+# Tablas intermedias (se regeneran con etl/01_build_data.py)
+data/
+# Logs y temporales
+*.log
+__pycache__/
+~$*
+*.tmp
+.vercel
+.env*

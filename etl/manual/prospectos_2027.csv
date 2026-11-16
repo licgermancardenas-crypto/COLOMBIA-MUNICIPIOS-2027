@@ -1,0 +1,41 @@
+nombre,territorio,cod_divipola,dignidad,partido_mencionado,estado,descripcion_fuente,cargo_o_trayectoria,fuente_id
+Claudia López,Bogotá D.C.,11001,Alcaldía,Pacto Histórico / alianza centro-izquierda (según Infobae),Actor político identificado,"Infobae: 'buscaría volver'; El Nuevo Siglo: 'buscaría repetir'; La FM: 'sería la favorita'",Exalcaldesa de Bogotá (2020-2023); excandidata presidencial 2026,F-NEWS-01;F-NEWS-02;F-NEWS-03
+Gustavo Petro,Bogotá D.C.,11001,Alcaldía,Pacto Histórico,Actor político identificado,"El Nuevo Siglo: 'no descarta buscar un segundo periodo'; La FM: podría ir a consulta",Expresidente de la República (2022-2026); exalcalde de Bogotá (2012-2015),F-NEWS-02;F-NEWS-03
+Enrique Peñalosa,Bogotá D.C.,11001,Alcaldía,No especificado,Actor político identificado,El Nuevo Siglo: 'figura entre los eventuales aspirantes',Exalcalde de Bogotá (dos periodos); precandidato presidencial 2026,F-NEWS-02
+Camilo Romero,Bogotá D.C.,11001,Alcaldía,No especificado (izquierda),Actor político identificado,La FM: 'levantó la mano'; plan B Gobernación de Nariño,Exembajador en Argentina; exgobernador de Nariño,F-NEWS-03
+Carlos Carrillo,Bogotá D.C.,11001,Alcaldía,No especificado (izquierda),Actor político identificado,La FM: podría ir de manera disidente,Exdirector de la UNGRD,F-NEWS-03
+Ovidio Claros,Bogotá D.C.,11001,Alcaldía,No especificado,Actor político identificado,La FM: 'piensa seriamente' en presentar su nombre,Presidente saliente de la Cámara de Comercio de Bogotá,F-NEWS-03
+Francia Márquez,Cali,76001,Alcaldía,Pacto Histórico,Actor político identificado,Infobae y La FM: evaluada como posible candidata,Exvicepresidenta de la República,F-NEWS-01;F-NEWS-03
+Clara Luz Roldán,Cali / Valle del Cauca,76001,Alcaldía (El Nuevo Siglo) o Gobernación del Valle (La FM),Partido de la U,Aspirante,"El Nuevo Siglo: 'ya anticipó que se presentará' (Alcaldía de Cali); La FM la ubica en la Gobernación del Valle — fuentes discrepan",Exgobernadora del Valle; copresidenta del Partido de la U,F-NEWS-02;F-NEWS-03
+Alejandro Ocampo,Cali,76001,Alcaldía,No especificado,Actor político identificado,La FM: 'quiere sumarse a la carrera',Senador,F-NEWS-03
+Alexánder López,Valle del Cauca,76,Gobernación,Pacto Histórico,Actor político identificado,Infobae/La FM: carta principal del Pacto para el Valle,Exsenador; exdirector del DNP,F-NEWS-01;F-NEWS-03
+Alfredo Mondragón,Valle del Cauca,76,Gobernación,No especificado,Actor político identificado,La FM: sectores interesados,Congresista,F-NEWS-03
+Wilson Arias,Valle del Cauca,76,Gobernación,No especificado,Actor político identificado,La FM: sectores interesados,Exsenador,F-NEWS-03
+Gustavo Bolívar,Cundinamarca,25,Gobernación,Pacto Histórico,Actor político identificado,Infobae y La FM: 'sería la carta',Exsenador; exdirector de Prosperidad Social,F-NEWS-01;F-NEWS-03
+Nicolás García,Cundinamarca,25,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'toma más fuerza la versión',Exgobernador de Cundinamarca (2020-2023),F-NEWS-02
+Mario Fernández Alcocer,Sucre,70,Gobernación,Pacto Histórico / En Marcha,Actor político identificado,Infobae: 'volvería a lanzarse',Diputado de Sucre,F-NEWS-01;F-NEWS-03
+Armando Benedetti,Barranquilla,08001,Alcaldía,Pacto Histórico,Actor político identificado,Infobae: 'figura como posible candidato',Exministro del Interior,F-NEWS-01;F-NEWS-03
+Jaime Alberto Pumarejo Heins,Barranquilla / Atlántico,08001,Alcaldía (o Gobernación del Atlántico),No especificado,Actor político identificado,El Nuevo Siglo: posible aspirante,Exalcalde de Barranquilla (2020-2023),F-NEWS-02
+Jaime Dussán,Huila,41,Gobernación,No especificado,Actor político identificado,Infobae: mencionado,Expresidente de Colpensiones,F-NEWS-01
+Carlos Julio González Villa,Huila,41,Gobernación,Cambio Radical,Actor político identificado,El Nuevo Siglo: eventual aspirante,Exgobernador del Huila (2016-2019); exsenador,F-NEWS-02
+Gorky Muñoz Calderón,Neiva,41001,Alcaldía,No especificado,Actor político identificado,El Nuevo Siglo: exalcalde que buscaría repetir,Exalcalde de Neiva (2020-2023),F-NEWS-02
+Héctor Aníbal Ramírez Escobar,Neiva,41001,Alcaldía,No especificado,Actor político identificado,El Nuevo Siglo: exalcalde que buscaría repetir,Exalcalde de Neiva (2008-2011),F-NEWS-02
+Héctor Javier Osorio Botello,Neiva,41001,Alcaldía,No especificado,Actor político identificado,El Nuevo Siglo: exalcalde que buscaría repetir,Exalcalde de Neiva (2001-2003),F-NEWS-02
+Aníbal Gaviria,Medellín / Antioquia,05001,Alcaldía de Medellín (plan B Gobernación de Antioquia),Partido Liberal,Actor político identificado,El Nuevo Siglo y La FM: 'suena',Exgobernador de Antioquia; exalcalde de Medellín,F-NEWS-02;F-NEWS-03
+Andrés Tobón,Medellín,05001,Alcaldía,Creemos,Actor político identificado,La FM: posible candidato,Sin dato en la fuente,F-NEWS-03
+Manuel Villa,Medellín / Antioquia,05001,Alcaldía de Medellín o Gobernación de Antioquia,Creemos (según URL de El Colombiano),Precandidato,"El Colombiano: 'oficializó su renuncia... y se suma a los precandidatos para 2027'",Exsecretario de Seguridad de Medellín,F-NEWS-04;F-NEWS-03
+Eugenio Prieto,Antioquia,05,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'todo indica que aspirará',Secretario de Planeación de Antioquia; exgobernador encargado,F-NEWS-02
+Vicente Blel,Bolívar,13,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'crecen las versiones',Exgobernador de Bolívar (2020-2023),F-NEWS-02
+Guido Echeverri Piedrahita,Caldas,17,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'no descarta presentarse',Exgobernador de Caldas; exsenador,F-NEWS-02
+Arnulfo Gasca,Caquetá,18,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'todo indica que será candidato',Exgobernador del Caquetá (2020-2023),F-NEWS-02
+Orlando Benítez,Córdoba,23,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: en la baraja,Exgobernador de Córdoba (2020-2023),F-NEWS-02
+Nemesio Roys Garzón,La Guajira,44,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'uno de los nombres más fuertes',Exgobernador de La Guajira,F-NEWS-02
+Jhon Alexander Rojas Cabrera,Nariño,52,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: entre los posibles,Exgobernador de Nariño (2020-2023),F-NEWS-02
+Raúl Delgado,Nariño,52,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: entre los posibles,Exgobernador de Nariño (2012-2015),F-NEWS-02
+Camilo Romero,Nariño,52,Gobernación (plan B),No especificado,Actor político identificado,La FM: plan B si no va a Bogotá,Exgobernador de Nariño,F-NEWS-03
+Silvano Serrano,Norte de Santander,54,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: entraría en la contienda,Exgobernador (2020-2023),F-NEWS-02
+Edgar Jesús Díaz Contreras,Norte de Santander,54,Gobernación,Cambio Radical (renunció para aspirar por otro partido),Aspirante,El Nuevo Siglo: 'aspirará',Exgobernador; exsenador,F-NEWS-02
+Miguel Antonio Ruano Navarro,Mocoa,86001,Alcaldía,No especificado,Actor político identificado,El Nuevo Siglo: 'se presentaría',Exalcalde de Mocoa (2001-2003),F-NEWS-02
+Nicolás Iván Gallardo Vásquez,San Andrés y Providencia,88,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'se presentaría'; su elección 2023 fue anulada por doble militancia,Gobernador electo 2023 (elección anulada),F-NEWS-02
+Óscar Barreto,Tolima,73,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'aspiraría a un nuevo mandato',Exgobernador del Tolima (2008-2011 y 2016-2019),F-NEWS-02
+Guillermo Alfonso Jaramillo,Tolima,73,Gobernación,No especificado,Actor político identificado,El Nuevo Siglo: 'también aspiraría',Exgobernador del Tolima; exministro de Salud,F-NEWS-02

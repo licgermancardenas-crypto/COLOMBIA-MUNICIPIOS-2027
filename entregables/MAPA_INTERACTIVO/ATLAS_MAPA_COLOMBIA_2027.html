@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Colombia 2027 · Mapa</title>
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<style>
+:root{--navy:#1F3864;--teal:#00695C;--orange:#ED7D31;--bg:#F6F8FC;--ink:#262626;--mute:#6b7280;--line:#e5e7eb;--card:#fff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+#top{position:absolute;top:0;left:0;right:0;height:56px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:0 14px;z-index:5}
+#top h1{font-size:16px;margin:0;white-space:nowrap}#top h1 span{color:#F4B183}
+#crumb{font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#crumb a{color:#BFD7FF;cursor:pointer;text-decoration:none}#crumb a:hover{text-decoration:underline}
+#top input,#top select{height:32px;border-radius:6px;border:0;padding:0 8px;font-size:13px}
+#search{width:200px}#fReg{width:140px}#fDep{width:170px}#fFz{width:170px}
+#map{position:absolute;top:56px;left:0;right:390px;bottom:0}
+#panel{position:absolute;top:56px;right:0;width:390px;bottom:0;background:var(--card);border-left:1px solid var(--line);overflow:auto;padding:14px 16px 30px}
+#panel h2{font-size:19px;margin:2px 0 2px;color:var(--navy)}#panel h3{font-size:13px;margin:16px 0 6px;color:var(--teal);text-transform:uppercase;letter-spacing:.04em}
+.sub{color:var(--mute);font-size:12px;margin-bottom:8px}
+.kv{display:grid;grid-template-columns:44% 56%;font-size:12.5px;border-top:1px solid var(--line)}.kv div{padding:5px 2px;border-bottom:1px solid var(--line)}.kv div:nth-child(odd){color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:11.5px}th{background:var(--navy);color:#fff;text-align:left;padding:4px;font-weight:600}td{padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;color:#fff}
+.btn{display:inline-block;margin:6px 6px 0 0;padding:6px 10px;border-radius:6px;background:var(--navy);color:#fff;font-size:12px;cursor:pointer;border:0}.btn.alt{background:var(--orange)}
+#legend{position:absolute;left:12px;bottom:24px;background:rgba(255,255,255,.95);border-radius:8px;padding:10px 12px;font-size:11.5px;max-height:46%;overflow:auto;box-shadow:0 1px 6px rgba(0,0,0,.15);z-index:3;min-width:190px}
+#legend b{display:block;margin-bottom:6px;color:var(--navy)}.lg{display:flex;align-items:center;gap:6px;margin:2px 0}.sw{width:14px;height:11px;border:1px solid #bbb;flex:none}
+#secbar{position:absolute;left:52px;top:66px;background:rgba(255,255,255,.96);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 1px 6px rgba(0,0,0,.15);z-index:3;display:none}
+#secbar select{font-size:12px;height:28px}
+#status{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:#111;color:#fff;padding:6px 12px;border-radius:14px;font-size:12px;display:none;z-index:6}
+.maplibregl-popup-content{font-size:12px;padding:8px 10px}
+.note{font-size:11px;color:var(--mute);margin-top:8px;line-height:1.35}
+@media (max-width:820px){#fReg,#fDep,#fFz{width:100px}#map{right:0;bottom:45%}#panel{top:auto;height:45%;width:100%;border-left:0;border-top:1px solid var(--line)}#search{width:130px}#top h1{display:none}}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>ATLAS <span>COLOMBIA 2027</span></h1>
+  <div id="crumb"></div>
+  <select id="fReg" title="Filtrar por región"><option value="">Todas las regiones</option></select>
+  <select id="fDep" title="Filtrar por departamento"><option value="">Todos los departamentos</option></select>
+  <select id="fFz" title="Filtrar por fuerza política (alcaldía 2023)"><option value="">Todas las fuerzas</option></select>
+  <input id="search" list="munlist" placeholder="Buscar municipio…" autocomplete="off"><datalist id="munlist"></datalist>
+  <select id="theme" title="Color de los municipios"></select>
+</div>
+<div id="map"></div>
+<div id="secbar">Sectores censales 2018: <select id="secvar"></select>
+  <label style="margin-left:8px"><input type="checkbox" id="mzn"> Manzanas (estrato, en vivo)</label><br>
+  <label><input type="checkbox" id="pue" checked> Puestos de votación 2026</label> · color: <select id="puecol"><option value="ls">Lista ganadora Senado</option><option value="lc">Lista ganadora Cámara</option><option value="part">Participación</option></select></div>
+<div id="legend"></div>
+<div id="status"></div>
+<div id="panel"></div>
+
+<script src="lib/maplibre-gl.js"></script>
+<script src="data/temas.js"></script>
+<script src="data/departamentos.js"></script>
+<script src="data/municipios.js"></script>
+<script src="data/listas2026.js"></script>
+<script>
+const T = window.ATLAS_TEMAS.themes, DEP = window.ATLAS_DEP, MUN = window.ATLAS_MUN;
+const MUNI = {}; MUN.features.forEach(f => MUNI[f.properties.c] = f);
+const DEPI = {}; DEP.features.forEach(f => DEPI[f.properties.c] = f);
+const fmt = (x, d = 0) => x == null ? 's/d' : Number(x).toLocaleString('es-CO', {maximumFractionDigits: d, minimumFractionDigits: d});
+const pct = (x, d = 1) => x == null ? 's/d' : (x * 100).toLocaleString('es-CO', {maximumFractionDigits: d, minimumFractionDigits: d}) + ' %';
+const esc = s => s == null ? '' : String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const labF = k => (T.fz.labels[k] || k || 's/d');
+const colF = k => (T.fz.colors[k] || '#D5D8DC');
+const SECV = {
+  v_pob: ['Población 2018', 'n'], v_den: ['Densidad (hab/km²)', 'n'], v_may: ['% mayores de 60', 'p'], v_jov: ['% jóvenes 15-29', 'p'],
+  v_sup: ['% con educación superior', 'p'], v_ind: ['% población indígena', 'p'], v_afr: ['% afrodescendiente / raizal / palenquero', 'p'],
+  v_mig: ['% nacidos en otro país', 'p'], v_anf: ['% que no sabe leer ni escribir', 'p'], v_est: ['Estrato predominante (viviendas)', 'e'],
+  v_acu: ['% viviendas sin acueducto', 'p'], v_int: ['% viviendas con internet', 'p'], v_viv: ['Viviendas', 'n']};
+const RAMP = ['#FFF5EB', '#FDD0A2', '#FD8D3C', '#D94801', '#7F2704'];
+const ESTC = {1: '#B30000', 2: '#E34A33', 3: '#FC8D59', 4: '#9ECAE1', 5: '#4292C6', 6: '#08519C'};
+
+// ---------- UI base
+const themeSel = document.getElementById('theme');
+Object.entries(T).forEach(([k, v]) => themeSel.add(new Option(v.t, k)));
+const secSel = document.getElementById('secvar');
+Object.entries(SECV).forEach(([k, v]) => secSel.add(new Option(v[0], k)));
+const REG = window.ATLAS_TEMAS.regiones || {};
+const fReg = document.getElementById('fReg'), fDep = document.getElementById('fDep');
+Object.keys(REG).forEach(r => fReg.add(new Option(r, r)));
+function fillDeps(r) {
+  const cur = fDep.value; fDep.length = 1;
+  DEP.features.map(f => f.properties).filter(p => !r || p.rg === r).sort((a, b) => a.n.localeCompare(b.n)).forEach(p => fDep.add(new Option(p.n, p.c)));
+  fDep.value = [...fDep.options].some(o => o.value === cur) ? cur : '';
+}
+fillDeps('');
+function fillMunList() { const r = fReg.value, d = fDep.value; dl.innerHTML = ''; MUN.features.map(f => f.properties).filter(p => (!r || p.rg === r) && (!d || p.di === d)).sort((a, b) => a.n.localeCompare(b.n)).forEach(p => { const o = document.createElement('option'); o.value = `${p.n} · ${p.d}`; dl.appendChild(o); }); }
+fReg.onchange = () => { fillDeps(fReg.value); go(fReg.value ? `r=${encodeURIComponent(fReg.value)}` : ''); };
+fDep.onchange = () => { if (fDep.value) go(`d=${fDep.value}`); else go(fReg.value ? `r=${encodeURIComponent(fReg.value)}` : ''); };
+const fFz = document.getElementById('fFz');
+{ const c = {}; MUN.features.forEach(f => { const k = f.properties.fz; if (k) c[k] = (c[k] || 0) + 1; });
+  Object.entries(c).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => fFz.add(new Option(`${labF(k)} (${v})`, k))); }
+let FZ = '';
+fFz.onchange = () => { FZ = fFz.value; applyDim(); legend(); renderPanel(); };
+const dl = document.getElementById('munlist');
+fillMunList();
+const status = (t) => { const s = document.getElementById('status'); s.textContent = t || ''; s.style.display = t ? 'block' : 'none'; };
+
+// ---------- mapa
+const map = new maplibregl.Map({
+  container: 'map', attributionControl: {compact: true},
+  style: {version: 8,
+    sources: {base: {type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 16,
+      attribution: 'Base: Esri, HERE, Garmin, © OpenStreetMap · DANE MGN/CNPV 2018 · Registraduría/CEDAE · Atlas'}},
+    layers: [{id: 'bg', type: 'background', paint: {'background-color': '#EEF2F7'}}, {id: 'base', type: 'raster', source: 'base', paint: {'raster-opacity': .9}}]},
+  bounds: [[-79.5, -4.4], [-66.8, 12.7]], fitBoundsOptions: {padding: 20}, maxZoom: 18
+});
+map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-left');
+map.addControl(new maplibregl.ScaleControl({unit: 'metric'}), 'bottom-right');
+
+let level = 'pais', curDep = null, curMun = null, hoverPop = new maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 8});
+
+function themeExpr() {
+  const k = themeSel.value, prop = k, cols = T[k].colors;
+  const e = ['match', ['get', prop]]; Object.entries(cols).forEach(([a, b]) => e.push(a, b)); e.push('#FFFFFF'); return e;
+}
+function bbox(geom) {
+  let b = [180, 90, -180, -90]; const walk = c => { if (typeof c[0] === 'number') { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(walk); };
+  walk(geom.coordinates); return [[b[0], b[1]], [b[2], b[3]]];
+}
+function fcBbox(features) { let b = [[180, 90], [-180, -90]]; features.forEach(f => { const x = bbox(f.geometry); b = [[Math.min(b[0][0], x[0][0]), Math.min(b[0][1], x[0][1])], [Math.max(b[1][0], x[1][0]), Math.max(b[1][1], x[1][1])]]; }); return b; }
+
+map.once('load', () => {
+  map.addSource('mun', {type: 'geojson', data: MUN, promoteId: 'c'});
+  map.addSource('dep', {type: 'geojson', data: DEP, promoteId: 'c'});
+  map.addSource('sec', {type: 'geojson', data: {type: 'FeatureCollection', features: []}, promoteId: 'id'});
+  map.addSource('mzn', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
+  map.addLayer({id: 'mun-fill', type: 'fill', source: 'mun', paint: {'fill-color': themeExpr(), 'fill-opacity': ['case', ['boolean', ['feature-state', 'dim'], false], .13, .85]}});
+  map.addLayer({id: 'mun-line', type: 'line', source: 'mun', paint: {'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 5, .2, 9, 1]}});
+  map.addLayer({id: 'sec-fill', type: 'fill', source: 'sec', paint: {'fill-color': '#ccc', 'fill-opacity': .85}});
+  map.addLayer({id: 'sec-line', type: 'line', source: 'sec', paint: {'line-color': '#5b5b5b', 'line-width': ['case', ['boolean', ['feature-state', 'sel'], false], 3, .5]}});
+  map.addLayer({id: 'mzn-fill', type: 'fill', source: 'mzn', paint: {'fill-color': ['match', ['get', 'ESTRATO_PREDOMINANTE_INT'], 1, ESTC[1], 2, ESTC[2], 3, ESTC[3], 4, ESTC[4], 5, ESTC[5], 6, ESTC[6], '#cccccc'], 'fill-opacity': .8}});
+  map.addLayer({id: 'mzn-line', type: 'line', source: 'mzn', paint: {'line-color': '#fff', 'line-width': .4}});
+  map.addSource('pue', {type: 'geojson', data: {type: 'FeatureCollection', features: []}, promoteId: 'id'});
+  map.addLayer({id: 'pue-circle', type: 'circle', source: 'pue', paint: {
+    'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, ['interpolate', ['linear'], ['sqrt', ['min', ['coalesce', ['get', 'pot'], 0], 30000]], 0, 2, 150, 9], 15, ['interpolate', ['linear'], ['sqrt', ['min', ['coalesce', ['get', 'pot'], 0], 30000]], 0, 4, 150, 22]],
+    'circle-color': '#888', 'circle-opacity': .88, 'circle-stroke-color': ['case', ['boolean', ['feature-state', 'sel'], false], '#000', ['==', ['get', 'esp'], 1], '#555', '#fff'],
+    'circle-stroke-width': ['case', ['boolean', ['feature-state', 'sel'], false], 3, 1]}});
+  map.addLayer({id: 'dep-line', type: 'line', source: 'dep', paint: {'line-color': '#1F3864', 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 9, 2.5]}});
+  map.addLayer({id: 'mun-sel', type: 'line', source: 'mun', filter: ['==', ['get', 'c'], ''], paint: {'line-color': '#ED7D31', 'line-width': 3.5}});
+  map.addLayer({id: 'dep-sel', type: 'line', source: 'dep', filter: ['==', ['get', 'c'], ''], paint: {'line-color': '#ED7D31', 'line-width': 3}});
+  READY = true; route(); legend();
+});
+
+// ---------- interacción
+map.on('mousemove', e => {
+  const s = map.queryRenderedFeatures(e.point, {layers: ['pue-circle', 'sec-fill', 'mzn-fill', 'mun-fill']});
+  if (!s.length) { hoverPop.remove(); map.getCanvas().style.cursor = ''; return; }
+  map.getCanvas().style.cursor = 'pointer';
+  const f = s[0], p = f.properties; let h;
+  if (f.layer.id === 'pue-circle') h = `<b>${esc(p.n)}</b><br>${esc(p.com || p.cat || '')}<br>Potencial 2026: <b>${fmt(p.pot)}</b> · participación ${pct(p.part)}<br>Senado: ${esc(p.ls || 's/d')} · Cámara: ${esc(p.lc || 's/d')}`;
+  else if (f.layer.id === 'sec-fill') { const k = secSel.value; h = `<b>Sector ${esc(p.ti).toLowerCase()} ${esc(p.id)}</b><br>${SECV[k][0]}: <b>${fv(k, p[k])}</b><br>Población: ${fmt(p.v_pob)}`; }
+  else if (f.layer.id === 'mzn-fill') h = `<b>Manzana</b><br>Estrato predominante: <b>${esc(p.ESTRATO_PREDOMINANTE)}</b>`;
+  else h = `<b>${esc(p.n)}</b> · ${esc(p.d)}<br>Alcalde: ${esc(p.al || 's/d')}<br>${esc(labF(p.fz))}${p.m19 != null ? ` · margen 2019: ${fmt(p.m19, 1)} pts` : ''}<br><i>clic para ${level === 'pais' ? 'entrar al departamento' : 'ver el municipio'}</i>`;
+  hoverPop.setLngLat(e.lngLat).setHTML(h).addTo(map);
+});
+map.on('mouseout', () => hoverPop.remove());
+map.on('click', e => {
+  const pq = map.queryRenderedFeatures(e.point, {layers: ['pue-circle']});
+  if (pq.length && level === 'mun') { selectPuesto(pq[0].properties.id); return; }
+  const s = map.queryRenderedFeatures(e.point, {layers: ['sec-fill']});
+  if (s.length && level === 'mun') { selectSector(s[0]); return; }
+  const m = map.queryRenderedFeatures(e.point, {layers: ['mun-fill']});
+  if (!m.length) return;
+  const p = m[0].properties;
+  if (level === 'pais') go(`d=${p.di}`); else go(`m=${p.c}`);
+});
+themeSel.onchange = () => { map.setPaintProperty('mun-fill', 'fill-color', themeExpr()); legend(); };
+secSel.onchange = () => { paintSectors(); legend(); };
+document.getElementById('search').onchange = e => {
+  const v = e.target.value; const f = MUN.features.find(f => `${f.properties.n} · ${f.properties.d}` === v || f.properties.n === v.toUpperCase());
+  if (f) { go(`m=${f.properties.c}`); e.target.value = ''; }
+};
+document.getElementById('mzn').onchange = () => loadManzanas();
+document.getElementById('pue').onchange = () => { map.setLayoutProperty('pue-circle', 'visibility', document.getElementById('pue').checked ? 'visible' : 'none'); legend(); };
+document.getElementById('puecol').onchange = () => { paintPuestos(); legend(); };
+map.on('moveend', () => { if (document.getElementById('mzn').checked) loadManzanas(); });
+window.addEventListener('hashchange', route);
+const go = h => { if (location.hash.slice(1) === h) route(); else location.hash = h; };
+
+// ---------- navegación
+let READY = false;
+function route() {
+  if (!READY) return;
+  const h = new URLSearchParams(location.hash.slice(1));
+  const m = h.get('m'), d = h.get('d'), r = h.get('r');
+  const syncSel = (rg, dp) => { fReg.value = rg || ''; fillDeps(fReg.value); fDep.value = dp || ''; fillMunList(); };
+  if (m && MUNI[m]) { syncSel(MUNI[m].properties.rg, MUNI[m].properties.di); return showMun(m); }
+  if (d && DEPI[d]) { syncSel(DEPI[d].properties.rg, d); return showDep(d); }
+  if (r && REG[r]) { syncSel(r, ''); return showReg(r); }
+  syncSel('', ''); showPais();
+}
+let DIMFN = () => false;
+function setDim(fn) { DIMFN = fn; applyDim(); }
+function applyDim() { MUN.features.forEach(f => map.setFeatureState({source: 'mun', id: f.properties.c}, {dim: DIMFN(f.properties) || (!!FZ && level !== 'mun' && f.properties.fz !== FZ)})); }
+function inScope(p) { return level === 'mun' ? p.di === curDep : curDep ? p.di === curDep : curReg ? p.rg === curReg : true; }
+function fzBox() {
+  if (!FZ) return '';
+  const ms = MUN.features.map(f => f.properties).filter(p => p.fz === FZ && inScope(p));
+  const scope = curDep ? DEPI[curDep].properties.n : curReg ? 'región ' + curReg : 'Colombia';
+  const tot = MUN.features.filter(f => inScope(f.properties) && f.properties.al).length;
+  const byD = {}; ms.forEach(p => byD[p.d] = (byD[p.d] || 0) + 1);
+  const pob = ms.reduce((a, p) => a + (p.pob || 0), 0);
+  return `<div style="border:2px solid ${colF(FZ)};border-radius:8px;padding:10px 12px;margin:0 0 12px">
+  <div style="font-size:12px;color:#6b7280">FILTRO DE FUERZA</div><h2 style="margin:2px 0"><span class="sw" style="display:inline-block;width:14px;height:14px;background:${colF(FZ)}"></span> ${esc(labF(FZ))}</h2>
+  <div class="kv"><div>Alcaldías en ${esc(scope)}</div><div><b>${ms.length}</b> de ${tot} (${pct(tot ? ms.length / tot : null)})</div><div>Población gobernada 2026</div><div>${fmt(pob)}</div>
+  <div>Gobernaciones (${esc(scope)})</div><div>${DEP.features.map(f => f.properties).filter(q => q.fz === FZ && (!curReg || q.rg === curReg) && (!curDep || q.c === curDep)).map(q => esc(q.n)).join(', ') || 'ninguna'}</div></div>
+  ${!curDep && ms.length ? `<table style="margin-top:6px"><tr><th>Departamento</th><th>Alcaldías</th></tr>${Object.entries(byD).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('')}</table>` : ''}
+  ${ms.length ? `<details ${curDep ? 'open' : ''} style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:#1F3864">Ver los ${ms.length} municipios</summary><table>${ms.sort((a, b) => (b.pob || 0) - (a.pob || 0)).map(p => `<tr><td><a href="#m=${p.c}">${esc(p.n)}</a></td><td>${esc(p.d)}</td><td>${esc(p.al || '')}</td></tr>`).join('')}</table></details>` : '<div class="note">Esta fuerza no gobierna municipios en este ámbito.</div>'}
+  <div class="note">Fuerza del alcalde electo en 2023. Las coaliciones no se atribuyen a sus partidos. <a href="javascript:clearFz()">Quitar filtro</a></div></div>`;
+}
+function clearFz() { fFz.value = ''; FZ = ''; applyDim(); legend(); renderPanel(); }
+function renderPanel() { if (level === 'mun') panelMun(curMun); else if (curDep) panelDep(curDep); else if (curReg) panelReg(curReg); else panelPais(); if (level === 'mun') { panelSecSummary(); panelPueSummary(); } }
+function crumb() {
+  let s = `<a onclick="go('')">Colombia</a>`;
+  if (curReg) s += ` › <a onclick="go('r=${encodeURIComponent(curReg)}')">${esc(curReg)}</a>`;
+  if (curDep) s += ` › <a onclick="go('d=${curDep}')">${esc(DEPI[curDep].properties.n)}</a>`;
+  if (curMun) s += ` › <b>${esc(MUNI[curMun].properties.n)}</b>`;
+  document.getElementById('crumb').innerHTML = s;
+}
+function showPais() {
+  level = 'pais'; curReg = null; curDep = curMun = null; clearSectors(); setDim(() => false);
+  map.setFilter('mun-sel', ['==', ['get', 'c'], '']); map.setFilter('dep-sel', ['==', ['get', 'c'], '']);
+  map.fitBounds([[-79.5, -4.4], [-66.8, 12.7]], {padding: 20});
+  crumb(); panelPais();
+}
+let curReg = null;
+function showReg(r) {
+  level = 'pais'; curReg = r; curDep = curMun = null; clearSectors(); setDim(p => p.rg !== r);
+  map.setFilter('dep-sel', ['==', ['get', 'rg'], r]); map.setFilter('mun-sel', ['==', ['get', 'c'], '']);
+  map.fitBounds(fcBbox(DEP.features.filter(f => f.properties.rg === r)), {padding: 30});
+  crumb(); panelReg(r);
+}
+function showDep(d) {
+  level = 'dep'; curReg = DEPI[d].properties.rg; curDep = d; curMun = null; clearSectors(); setDim(p => p.di !== d);
+  map.setFilter('dep-sel', ['==', ['get', 'c'], d]); map.setFilter('mun-sel', ['==', ['get', 'c'], '']);
+  map.fitBounds(bbox(DEPI[d].geometry), {padding: 30});
+  crumb(); panelDep(d);
+}
+function showMun(c) {
+  const p = MUNI[c].properties; level = 'mun'; curReg = p.rg; curDep = p.di; curMun = c; setDim(q => q.c !== c);
+  map.setFilter('mun-sel', ['==', ['get', 'c'], c]); map.setFilter('dep-sel', ['==', ['get', 'c'], p.di]);
+  map.fitBounds(bbox(MUNI[c].geometry), {padding: 40, maxZoom: 13});
+  crumb(); panelMun(c); loadSectors(p.di, c);
+}
+
+// ---------- sectores
+let SECS = [], breaks = [], selSec = null, PUES = [], selPue = null;
+const LIS = window.ATLAS_LISTAS || {};
+const PART = [[0, '#f7fbff'], [.35, '#c6dbef'], [.45, '#6baed6'], [.55, '#2171b5'], [.65, '#08306b']];
+function paintPuestos() {
+  const k = document.getElementById('puecol').value;
+  const wrap = e => ['case', ['==', ['get', 'esp'], 1], '#FFFFFF', e];
+  if (k === 'part') { const e = ['step', ['coalesce', ['get', 'part'], 0], PART[0][1]]; PART.slice(1).forEach(([b, c]) => e.push(b, c)); map.setPaintProperty('pue-circle', 'circle-color', wrap(e)); return; }
+  const e = ['match', ['coalesce', ['get', k], '']]; Object.entries(LIS).forEach(([a, b]) => e.push(a, b)); e.push('#BDBDBD');
+  map.setPaintProperty('pue-circle', 'circle-color', wrap(e));
+}
+function selectPuesto(id) {
+  const f = PUES.find(x => x.properties.id === id); if (!f) return;
+  if (selPue) map.setFeatureState({source: 'pue', id: selPue}, {sel: false});
+  selPue = id; map.setFeatureState({source: 'pue', id}, {sel: true});
+  const p = f.properties, el = document.getElementById('puedet');
+  el.innerHTML = `<h3>Puesto de votación</h3><div style="font-weight:bold;font-size:14px">${esc(p.n)}</div><div class="sub">${esc(p.dir || '')} · ${esc(p.com || '')} · ${esc(p.cat || '')} · código ${esc(p.id)}</div>
+  <div class="kv"><div>Potencial electoral 2026</div><div><b>${fmt(p.pot)}</b> (${fmt(p.mu)} mujeres · ${fmt(p.h)} hombres)</div>
+  <div>Participación Senado 2026</div><div>${pct(p.part)}</div><div>Votos válidos Senado</div><div>${fmt(p.vv)}</div>
+  <div>Ganó Senado</div><div><span class="sw" style="display:inline-block;background:${LIS[p.ls] || '#bbb'}"></span> ${esc(p.ls || 's/d')} · ${fmt(p.lsv)} votos (${p.vv ? pct(p.lsv / p.vv) : 's/d'})</div>
+  <div>Ganó Cámara</div><div><span class="sw" style="display:inline-block;background:${LIS[p.lc] || '#bbb'}"></span> ${esc(p.lc || 's/d')} · ${fmt(p.lcv)} votos (${p.vvc ? pct(p.lcv / p.vvc) : 's/d'})</div></div>
+  <div class="note">Escrutinio legislativas 8-mar-2026 (Esri Colombia con datos de la Registraduría). Potencial = censo electoral del puesto.</div>`;
+  el.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+function flyPuesto(id) { const f = PUES.find(x => x.properties.id === id); if (!f) return; map.flyTo({center: f.geometry.coordinates, zoom: 15.5}); selectPuesto(id); }
+function loadSectors(d, c) {
+  const done = () => {
+    if (!(window.ATLAS_PUE && window.ATLAS_PUE[d])) return;
+    if (!(window.ATLAS_SEC && window.ATLAS_SEC[d])) return;
+    PUES = window.ATLAS_PUE[d].features.filter(f => f.properties.m === c);
+    map.getSource('pue').setData({type: 'FeatureCollection', features: PUES}); paintPuestos();
+    const fc = (window.ATLAS_SEC || {})[d];
+    SECS = fc ? fc.features.filter(f => f.properties.m === c) : [];
+    map.getSource('sec').setData({type: 'FeatureCollection', features: SECS});
+    map.setLayoutProperty('mun-fill', 'visibility', 'visible');
+    document.getElementById('secbar').style.display = 'block';
+    paintSectors(); legend(); panelSecSummary(); panelPueSummary();
+    if (!SECS.length) status('Sin sectores censales para este municipio en la fuente');
+    else status(''); setTimeout(() => status(''), 2500);
+  };
+  if (window.ATLAS_SEC && window.ATLAS_SEC[d] && window.ATLAS_PUE && window.ATLAS_PUE[d]) return done();
+  status('Cargando sectores censales y puestos…');
+  [[`data/sectores/s_${d}.js`, 'ATLAS_SEC'], [`data/puestos/p_${d}.js`, 'ATLAS_PUE']].forEach(([src, v]) => {
+    if (window[v] && window[v][d]) return;
+    const s = document.createElement('script'); s.src = src; s.onload = done; s.onerror = () => status('No se pudo cargar ' + src);
+    document.head.appendChild(s);
+  });
+}
+function clearSectors() {
+  PUES = []; selPue = null; if (map.getSource('pue')) map.getSource('pue').setData({type: 'FeatureCollection', features: []});
+  SECS = []; selSec = null; if (map.getSource('sec')) map.getSource('sec').setData({type: 'FeatureCollection', features: []});
+  document.getElementById('secbar').style.display = 'none'; document.getElementById('mzn').checked = false; if (map.getSource('mzn')) map.getSource('mzn').setData({type: 'FeatureCollection', features: []});
+}
+function fv(k, v) { const t = SECV[k][1]; return v == null ? 's/d' : t === 'p' ? pct(v) : t === 'e' ? 'Estrato ' + v : fmt(v, k === 'v_den' ? 1 : 0); }
+function paintSectors() {
+  if (!SECS.length) return; const k = secSel.value;
+  if (SECV[k][1] === 'e') { const e = ['match', ['get', k]]; Object.entries(ESTC).forEach(([a, b]) => e.push(+a, b)); e.push('#dddddd'); map.setPaintProperty('sec-fill', 'fill-color', e); breaks = []; return; }
+  const vals = SECS.map(f => f.properties[k]).filter(v => v != null).sort((a, b) => a - b);
+  const q = p => vals.length ? vals[Math.min(vals.length - 1, Math.floor(p * vals.length))] : 0;
+  breaks = [...new Set([q(.2), q(.4), q(.6), q(.8)])];
+  const e = ['case', ['==', ['get', k], null], '#eeeeee', ['step', ['to-number', ['get', k]], RAMP[0]]];
+  breaks.forEach((b, i) => e[3].push(b, RAMP[i + 1]));
+  map.setPaintProperty('sec-fill', 'fill-color', e);
+}
+function selectSector(f) {
+  if (selSec) map.setFeatureState({source: 'sec', id: selSec}, {sel: false});
+  selSec = f.properties.id; map.setFeatureState({source: 'sec', id: selSec}, {sel: true});
+  const p = f.properties, el = document.getElementById('secdet');
+  el.innerHTML = `<h3>Sector ${esc(p.ti).toLowerCase()} seleccionado</h3><div class="sub">Código ${esc(p.id)} · ${fmt(p.km2, 2)} km²</div><div class="kv">` +
+    Object.keys(SECV).map(k => `<div>${SECV[k][0]}</div><div><b>${fv(k, p[k])}</b></div>`).join('') + '</div>';
+  el.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+let mznCtl = null;
+async function loadManzanas() {
+  const on = document.getElementById('mzn').checked;
+  if (!on || level !== 'mun') { map.getSource('mzn').setData({type: 'FeatureCollection', features: []}); return; }
+  if (map.getZoom() < 13.5) { status('Acercá más el zoom (≥ 14) para ver manzanas'); setTimeout(() => status(''), 2500); return; }
+  const b = map.getBounds(); if (mznCtl) mznCtl.abort(); mznCtl = new AbortController();
+  const u = 'https://ags.esri.co/arcgis/rest/services/LivingAtlas/Estrato_predominante_por_manzana_2018/MapServer/0/query?' + new URLSearchParams({
+    geometry: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(','), geometryType: 'esriGeometryEnvelope', inSR: 4326, outSR: 4326,
+    spatialRel: 'esriSpatialRelIntersects', outFields: 'ESTRATO_PREDOMINANTE,ESTRATO_PREDOMINANTE_INT', returnGeometry: true, geometryPrecision: 6, f: 'geojson', resultRecordCount: 2000});
+  status('Cargando manzanas…');
+  try { const r = await fetch(u, {signal: mznCtl.signal}); const j = await r.json(); map.getSource('mzn').setData(j); status(j.features && j.features.length >= 2000 ? 'Mostrando 2.000 manzanas: acercá más para ver todas' : ''); }
+  catch (e) { if (e.name !== 'AbortError') status('No se pudieron cargar las manzanas (requiere internet)'); }
+  legend();
+}
+
+// ---------- leyenda
+function legend() {
+  const el = document.getElementById('legend'); let h = '';
+  if (level === 'mun' && SECS.length) {
+    const k = secSel.value; h += `<b>${SECV[k][0]}</b>`;
+    if (SECV[k][1] === 'e') Object.entries(ESTC).forEach(([a, c]) => h += `<div class="lg"><span class="sw" style="background:${c}"></span>Estrato ${a}</div>`);
+    else { const ed = [null, ...breaks]; ed.forEach((b, i) => { const nx = ed[i + 1]; h += `<div class="lg"><span class="sw" style="background:${RAMP[i]}"></span>${b == null ? 'menos de ' + fv(k, nx) : nx == null ? fv(k, b) + ' o más' : fv(k, b) + ' – ' + fv(k, nx)}</div>`; }); }
+    h += `<div class="note">Cortes por quintiles dentro del municipio · DANE CNPV 2018</div>`;
+    if (PUES.length && document.getElementById('pue').checked) {
+      const k = document.getElementById('puecol').value;
+      h += `<b style="margin-top:8px">Puestos 2026 · ${k === 'part' ? 'participación Senado' : k === 'ls' ? 'ganó Senado' : 'ganó Cámara'}</b>`;
+      if (k === 'part') PART.forEach(([b, c], i) => h += `<div class="lg"><span class="sw" style="background:${c};border-radius:50%"></span>${i === PART.length - 1 ? pct(b, 0) + ' o más' : pct(b, 0) + ' – ' + pct(PART[i + 1][0], 0)}</div>`);
+      else { const pres = new Set(PUES.map(f => f.properties[k])); Object.entries(LIS).filter(([a]) => pres.has(a)).forEach(([a, c]) => h += `<div class="lg"><span class="sw" style="background:${c};border-radius:50%"></span>${esc(a)}</div>`); }
+      h += `<div class="lg"><span class="sw" style="background:#fff;border:1px solid #555;border-radius:50%"></span>Puesto Censo (administrativo)</div><div class="note">Tamaño del círculo = potencial electoral</div>`;
+    }
+    if (document.getElementById('mzn').checked) { h += '<b style="margin-top:8px">Manzanas: estrato</b>'; Object.entries(ESTC).forEach(([a, c]) => h += `<div class="lg"><span class="sw" style="background:${c}"></span>${a}</div>`); }
+  } else {
+    const k = themeSel.value, t = T[k]; h += `<b>${esc(t.t)}</b>`;
+    const present = new Set(MUN.features.map(f => f.properties[k]));
+    Object.entries(t.colors).filter(([a]) => present.has(a)).forEach(([a, c]) => h += `<div class="lg"><span class="sw" style="background:${c}"></span>${esc(t.labels[a] || a)}</div>`);
+    h += `<div class="lg"><span class="sw" style="background:#fff"></span>Sin dato</div>`;
+    if (FZ) h += `<div class="note" style="color:#1F3864"><b>Filtro activo:</b> sólo ${esc(labF(FZ))}; el resto, atenuado.</div>`;
+  }
+  el.innerHTML = h;
+}
+
+// ---------- paneles
+const P = document.getElementById('panel');
+function panelPais() {
+  const n = MUN.features.length, al = MUN.features.filter(f => f.properties.al).length;
+  const byF = {}; MUN.features.forEach(f => { const k = f.properties.fz; if (k) byF[k] = (byF[k] || 0) + 1; });
+  P.innerHTML = fzBox() + `<h2>Colombia</h2><div class="sub">Elecciones territoriales · 31-oct-2027 · corte ${window.ATLAS_TEMAS.corte}</div>
+  <div class="note" style="font-size:12.5px;color:#262626">Hacé <b>clic en un departamento</b> para entrar; después, clic en un municipio para ver su ficha y sus <b>sectores censales</b>. También podés buscar un municipio arriba.</div>
+  <h3>Alcaldías 2024-2027 por fuerza</h3><table><tr><th>Fuerza</th><th>Alcaldías</th></tr>${Object.entries(byF).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td><span class="sw" style="display:inline-block;background:${colF(k)}"></span> ${esc(labF(k))}</td><td>${v}</td></tr>`).join('')}</table>
+  <div class="note">${al} de ${n} entidades con alcalde 2023 identificado. Fuente: Esri/Registraduría, Wikipedia, CEDAE. Colores: convención analítica de Atlas.</div>
+  <h3>Regiones</h3><table><tr><th>Región</th><th>Departamentos</th><th>Municipios</th></tr>${Object.entries(REG).map(([r, ds]) => `<tr><td><a href="#r=${encodeURIComponent(r)}">${esc(r)}</a></td><td>${ds.length}</td><td>${MUN.features.filter(f => f.properties.rg === r).length}</td></tr>`).join('')}</table>
+  <h3>Departamentos</h3><table><tr><th>Departamento</th><th>Gobernador</th></tr>${DEP.features.map(f => f.properties).sort((a, b) => a.n.localeCompare(b.n)).map(p => `<tr><td><a href="#d=${p.c}">${esc(p.n)}</a></td><td>${esc(p.gob || '—')}</td></tr>`).join('')}</table>`;
+}
+function panelReg(r) {
+  const ms = MUN.features.map(f => f.properties).filter(p => p.rg === r), ds = DEP.features.map(f => f.properties).filter(p => p.rg === r);
+  const byF = {}; ms.forEach(p => { if (p.fz) byF[p.fz] = (byF[p.fz] || 0) + 1; });
+  const pob = ds.reduce((a, p) => a + (p.pob || 0), 0);
+  P.innerHTML = fzBox() + `<h2>Región ${esc(r)}</h2><div class="sub">${ds.length} departamento(s) · ${ms.filter(p => p.al).length} alcaldías con dato · población 2026: ${fmt(pob)}</div>
+  <div class="note" style="font-size:12.5px;color:#262626">Clic en un departamento del mapa (o elegilo arriba) para entrar.</div>
+  <h3>Gobernaciones</h3><table><tr><th>Departamento</th><th>Gobernador</th><th>Fuerza</th></tr>${ds.sort((a, b) => a.n.localeCompare(b.n)).map(p => `<tr><td><a href="#d=${p.c}">${esc(p.n)}</a></td><td>${esc(p.gob || '—')}</td><td>${esc(labF(p.fz))}</td></tr>`).join('')}</table>
+  <h3>Alcaldías 2024-2027 por fuerza</h3><table><tr><th>Fuerza</th><th>Alcaldías</th><th>%</th></tr>${Object.entries(byF).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td><span class="sw" style="display:inline-block;background:${colF(k)}"></span> ${esc(labF(k))}</td><td>${v}</td><td>${pct(v / ms.length)}</td></tr>`).join('')}</table>
+  <h3>Competitividad (swing)</h3><table><tr><th>Clasificación</th><th>Municipios</th></tr>${Object.entries(ms.reduce((a, p) => (a[p.sw] = (a[p.sw] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td><span class="sw" style="display:inline-block;background:${T.sw.colors[k] || '#ccc'}"></span> ${esc(k)}</td><td>${v}</td></tr>`).join('')}</table>`;
+}
+function panelDep(d) {
+  const p = DEPI[d].properties;
+  P.innerHTML = fzBox() + `<h2>${esc(p.n)}</h2><div class="sub">Región ${esc(p.rg || '')} · ${p.nm} municipios · capital ${esc(p.cap || '')}</div>
+  <div class="kv"><div>Gobernador 2024-2027</div><div><b>${esc(p.gob || '— (Bogotá D.C.: alcalde mayor)')}</b></div>
+  <div>Organización</div><div>${esc(p.org || '')}</div><div>% obtenido 2023</div><div>${pct(p.pg)}</div><div>Margen 2023</div><div>${p.mg == null ? 's/d' : fmt(p.mg, 1) + ' pts'}</div>
+  <div>Condición</div><div>${esc(p.cond || '')}</div><div>Población 2026</div><div>${fmt(p.pob)}</div><div>NBI 2018</div><div>${p.nbi == null ? 's/d' : fmt(p.nbi, 1) + ' %'}</div></div>
+  <h3>Alcaldías por fuerza</h3><table><tr><th>Fuerza</th><th>Alcaldías</th></tr>${p.alc.map(([k, v]) => `<tr><td><span class="sw" style="display:inline-block;background:${colF(k)}"></span> ${esc(labF(k))}</td><td>${v}</td></tr>`).join('')}</table>
+  ${p.act.length ? `<h3>Actores 2027 · gobernación (prensa)</h3><table><tr><th>Nombre</th><th>Partido</th><th>Estado</th></tr>${p.act.map(a => `<tr><td>${esc(a.nombre)}</td><td>${esc(a.partido_mencionado)}</td><td>${esc(a.estado)}</td></tr>`).join('')}</table>` : ''}
+  <h3>Municipios</h3><table><tr><th>Municipio</th><th>Alcalde</th><th>Fuerza</th></tr>${MUN.features.map(f => f.properties).filter(q => q.di === d).sort((a, b) => a.n.localeCompare(b.n)).map(q => `<tr><td><a href="#m=${q.c}">${esc(q.n)}</a></td><td>${esc(q.al || 's/d')}</td><td>${esc(labF(q.fz))}</td></tr>`).join('')}</table>`;
+}
+function panelMun(c) {
+  const p = MUNI[c].properties;
+  const H = p.h.map(r => `<tr><td>${r[0]}</td><td>${esc(r[1])}<br><span style="color:#6b7280">${esc(r[2])}</span></td><td>${pct(r[4])}</td><td>${r[5] == null ? '' : fmt(r[5], 1)}</td></tr>`).join('');
+  const C = p.c19.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r[0])}<br><span style="color:#6b7280">${esc(r[1])}</span></td><td>${fmt(r[2])}</td><td>${pct(r[3])}</td></tr>`).join('');
+  P.innerHTML = `<h2>${esc(p.n)}</h2><div class="sub">${esc(p.d)} · ${esc(p.t)} · DIVIPOLA ${p.c}</div>
+  <span class="pill" style="background:${colF(p.fz)}">${esc(labF(p.fz))}</span> <span class="pill" style="background:${(T.sw.colors[p.sw] || '#999')};color:#222">${esc(p.sw)}</span>
+  <h3>Poder local</h3><div class="kv"><div>Alcalde 2024-2027</div><div><b>${esc(p.al || 's/d')}</b></div><div>Organización</div><div>${esc(p.org || 's/d')}</div>
+  ${p.coa ? `<div>Coalición</div><div>${esc(p.coa)}</div>` : ''}<div>Votos 2023</div><div>${fmt(p.v23)} ${p.p23 != null ? '(' + pct(p.p23) + ')' : ''}</div>
+  <div>Fuerza / margen 2019</div><div>${esc(labF(p.f19))} · ${p.m19 == null ? 's/d' : fmt(p.m19, 1) + ' pts'}</div><div>Bastión</div><div>${esc(p.ba || 's/d')}${p.fd ? ' · ' + esc(labF(p.fd)) : ''}</div>
+  <div>P(la fuerza retiene) · modelo v0.1</div><div>${p.pr == null ? 'no aplica (coalición/local)' : pct(p.pr, 0)}</div></div>
+  <h3>Territorio</h3><div class="kv"><div>Población 2026</div><div>${fmt(p.pob)}</div><div>% rural</div><div>${pct(p.rur)}</div><div>IPM 2018</div><div>${p.ipm == null ? 's/d' : fmt(p.ipm, 1) + ' %'}</div>
+  <div>NBI 2018</div><div>${p.nbi == null ? 's/d' : fmt(p.nbi, 1) + ' %'}</div><div>Grupo MDM 2020</div><div>${esc(p.mdm || 's/d')}</div><div>Censo electoral 2019</div><div>${fmt(p.ce)}</div><div>Participación 2019</div><div>${pct(p.pa)}</div></div>
+  <div id="puesum"></div><div id="puedet"></div><div id="secsum"></div><div id="secdet"></div>
+  <h3>Historia de la alcaldía</h3><table><tr><th>Año</th><th>Ganador</th><th>%</th><th>Margen</th></tr>${H}</table><div class="note">2023: sólo el ganador es confiable en la fuente.</div>
+  <h3>Alcaldía 2019 · candidatos</h3><table><tr><th>#</th><th>Candidato</th><th>Votos</th><th>%</th></tr>${C}</table>
+  ${p.act.length ? `<h3>Actores 2027 (prensa)</h3><table><tr><th>Nombre</th><th>Partido</th><th>Estado</th></tr>${p.act.map(a => `<tr><td>${esc(a.nombre)}</td><td>${esc(a.partido_mencionado)}</td><td>${esc(a.estado)}</td></tr>`).join('')}</table>` : ''}
+  <div><button class="btn" onclick="go('d=${p.di}')">← ${esc(p.d)}</button><a class="btn alt" target="_blank" href="https://news.google.com/search?q=%22${encodeURIComponent(p.n)}%22+alcald%C3%ADa+2027&hl=es-419&gl=CO">Noticias</a></div>`;
+}
+function panelPueSummary() {
+  const el = document.getElementById('puesum'); if (!el) return;
+  if (!PUES.length) { el.innerHTML = '<h3>Puestos de votación</h3><div class="note">Sin puestos en la fuente para este municipio.</div>'; return; }
+  const pot = PUES.reduce((a, f) => a + (f.properties.pot || 0), 0), vv = PUES.reduce((a, f) => a + (f.properties.part || 0) * (f.properties.pot || 0), 0);
+  const by = {}; PUES.forEach(f => { const k = f.properties.ls || 's/d'; by[k] = (by[k] || 0) + 1; });
+  const esp = PUES.filter(f => f.properties.esp);
+  const top = [...PUES].filter(f => !f.properties.esp).sort((a, b) => (b.properties.pot || 0) - (a.properties.pot || 0)).slice(0, 12);
+  el.innerHTML = `<h3>Puestos de votación (2026)</h3><div class="kv"><div>Puestos</div><div>${PUES.length} (${PUES.filter(f => f.properties.cat === 'Urbano').length} urbanos)</div>
+  <div>Potencial electoral 2026</div><div><b>${fmt(pot)}</b></div><div>Participación Senado 2026</div><div>${pct(pot ? vv / pot : null)}</div>
+  <div>Puestos ganados (Senado)</div><div>${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="sw" style="display:inline-block;background:${LIS[k] || '#bbb'}"></span> ${esc(k)}: ${v}`).join('<br>')}</div></div>
+  <table style="margin-top:6px"><tr><th>Puesto (los de mayor potencial)</th><th>Potencial</th><th>Ganó Senado</th></tr>${top.map(f => `<tr><td><a href="javascript:flyPuesto('${f.properties.id}')">${esc(f.properties.n)}</a><br><span style="color:#6b7280">${esc(f.properties.com || '')}</span></td><td>${fmt(f.properties.pot)}</td><td>${esc(f.properties.ls || 's/d')}</td></tr>`).join('')}</table>${esp.length ? `<div class="note">Incluye ${esp.length} «Puesto Censo» (${fmt(esp.reduce((a, f) => a + (f.properties.pot || 0), 0))} inscritos): puesto administrativo de la Registraduría para cédulas sin sede asignada; se muestra en blanco y no entra en el ranking.</div>` : ''}`;
+}
+function panelSecSummary() {
+  const el = document.getElementById('secsum'); if (!el) return;
+  if (!SECS.length) { el.innerHTML = '<h3>Sectores censales</h3><div class="note">Sin sectores en la fuente para este municipio.</div>'; return; }
+  const sum = k => SECS.reduce((a, f) => a + (f.properties[k] || 0), 0);
+  const u = SECS.filter(f => f.properties.ti === 'Urbano').length;
+  el.innerHTML = `<h3>Sectores censales 2018</h3><div class="kv"><div>Sectores</div><div>${SECS.length} (${u} urbanos, ${SECS.length - u} rurales)</div><div>Población censada 2018</div><div>${fmt(sum('v_pob'))}</div><div>Viviendas</div><div>${fmt(sum('v_viv'))}</div></div>
+  <div class="note">Hacé clic en un sector para ver su detalle. Elegí la variable arriba a la izquierda. Con zoom alto podés activar las manzanas por estrato.</div>`;
+}
+</script>
+</body>
+</html>
